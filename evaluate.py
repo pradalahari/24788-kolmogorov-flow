@@ -66,7 +66,6 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # ── Data ──
     train_idx, val_idx = get_data_splits(n_samples=256, n_train=200, seed=42)
 
     norm_path = os.path.join(os.path.dirname(args.data_path), "normalizer.pt")
@@ -80,18 +79,15 @@ def main(args):
     # Rollout dataset (raw, unnormalized)
     rollout_ds = KolmFlowRolloutDataset(args.data_path, val_idx)
 
-    # ── Load models ──
     unet = load_model("unet", os.path.join(args.ckpt_dir, "best_unet.pt"), device)
     fno = load_model("fno", os.path.join(args.ckpt_dir, "best_fno.pt"), device)
 
-    # ── 1. One-step NRMSE ──
     print("\n=== One-Step NRMSE ===")
     nrmse_unet_1step = eval_one_step(unet, val_loader, device)
     nrmse_fno_1step = eval_one_step(fno, val_loader, device)
     print(f"U-Net: {nrmse_unet_1step:.6f}")
     print(f"FNO:   {nrmse_fno_1step:.6f}")
 
-    # ── 2. Rollout NRMSE ──
     print("\n=== Autoregressive Rollout ===")
     n_rollout_samples = min(5, len(val_idx))  # Average over a few samples
     rollout_steps = min(100, 199)
@@ -121,7 +117,6 @@ def main(args):
         save_path=os.path.join(args.fig_dir, "rollout_nrmse.png"),
     )
 
-    # ── 3. Qualitative vorticity comparison ──
     print("\n=== Vorticity Visualizations ===")
     # Use first validation sample
     frames = rollout_ds[0]  # [200, 160, 160]
@@ -149,7 +144,6 @@ def main(args):
                 save_path=os.path.join(args.fig_dir, f"vorticity_{model_name.lower()}_t{vis_step}.png"),
             )
 
-    # ── 4. Log-TKE Spectrum (Bonus) ──
     print("\n=== Log-TKE Spectrum ===")
     # Get predictions at a specific rollout step (e.g., t=20)
     tke_step = 20
@@ -171,7 +165,6 @@ def main(args):
         save_path=os.path.join(args.fig_dir, "tke_spectrum.png"),
     )
 
-    # ── Summary Table ──
     print("\n" + "=" * 50)
     print("SUMMARY")
     print("=" * 50)
