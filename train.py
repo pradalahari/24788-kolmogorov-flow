@@ -60,11 +60,9 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # ── Data splits ──
     train_idx, val_idx = get_data_splits(n_samples=256, n_train=200, seed=42)
     print(f"Train samples: {len(train_idx)}, Val samples: {len(val_idx)}")
 
-    # ── Normalizer ──
     norm_path = os.path.join(os.path.dirname(args.data_path), "normalizer.pt")
     if os.path.exists(norm_path):
         normalizer = __import__("utils").Normalizer.load(norm_path)
@@ -75,7 +73,6 @@ def main(args):
         normalizer.save(norm_path)
         print(f"Saved normalizer: mean={normalizer.mean:.4f}, std={normalizer.std:.4f}")
 
-    # ── Datasets & Loaders ──
     train_ds = KolmFlowDataset(args.data_path, train_idx, normalizer=normalizer, stride=args.stride)
     val_ds = KolmFlowDataset(args.data_path, val_idx, normalizer=normalizer, stride=args.stride)
 
@@ -84,7 +81,6 @@ def main(args):
 
     print(f"Train pairs: {len(train_ds)}, Val pairs: {len(val_ds)}")
 
-    # ── Model ──
     if args.model == "unet":
         model = UNet(in_channels=1, out_channels=1, base_channels=64)
     elif args.model == "fno":
@@ -96,19 +92,16 @@ def main(args):
     n_params = sum(p.numel() for p in model.parameters())
     print(f"Model: {args.model} | Parameters: {n_params:,}")
 
-    # Compile for speed (PyTorch 2.0+)
     try:
         model = torch.compile(model)
         print("Model compiled with torch.compile()")
     except Exception:
         print("torch.compile not available, using eager mode")
 
-    # ── Optimizer & Scheduler ──
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs)
     criterion = nn.MSELoss()
 
-    # ── Training loop ──
     train_losses = []
     val_losses = []
     best_val_loss = float("inf")
@@ -157,7 +150,6 @@ def main(args):
             print(f"Early stopping at epoch {epoch} (patience={args.patience})")
             break
 
-    # ── Save training curves ──
     fig_dir = args.fig_dir
     os.makedirs(fig_dir, exist_ok=True)
     plot_training_curves(
