@@ -6,11 +6,6 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-# ──────────────────────────────────────────────
-# Normalization
-# ──────────────────────────────────────────────
-
 class Normalizer:
     """Simple mean/std normalizer. Compute stats on training data, apply to all."""
 
@@ -55,9 +50,7 @@ def compute_normalizer(h5_file, train_indices, num_samples_for_stats=20):
     return Normalizer(mean, std)
 
 
-# ──────────────────────────────────────────────
 # Metrics
-# ──────────────────────────────────────────────
 
 def nrmse_field(pred, target, eps=1e-8):
     """
@@ -78,7 +71,6 @@ def nrmse_field(pred, target, eps=1e-8):
     target_flat = target.reshape(B, -1)
     nx_ny = pred_flat.shape[1]
 
-    # ||u||_2 = sqrt(1/(nx*ny) * sum |u(i,j)|^2)
     rmse = torch.sqrt(torch.mean((pred_flat - target_flat) ** 2, dim=1))
     norm = torch.sqrt(torch.mean(target_flat ** 2, dim=1)) + eps
 
@@ -122,9 +114,8 @@ def rollout_nrmse(model, initial_frame, ground_truth_frames, normalizer, device,
     return nrmse_per_step
 
 
-# ──────────────────────────────────────────────
+
 # Plotting
-# ──────────────────────────────────────────────
 
 def plot_training_curves(train_losses, val_losses, title="Training Curves", save_path=None):
     """Plot training and validation loss curves."""
@@ -188,9 +179,8 @@ def plot_vorticity_comparison(pred, target, timestep, model_name="Model", save_p
     plt.show()
 
 
-# ──────────────────────────────────────────────
+
 # Log-TKE Spectrum (Bonus)
-# ──────────────────────────────────────────────
 
 def compute_energy_spectrum(field):
     """
